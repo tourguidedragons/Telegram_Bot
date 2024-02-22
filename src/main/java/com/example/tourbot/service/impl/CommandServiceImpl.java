@@ -1,15 +1,23 @@
 package com.example.tourbot.service.impl;
 
 import com.example.tourbot.service.CommandService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
+@Slf4j
 public class CommandServiceImpl implements CommandService {
 
     public BotApiMethod<?> validateCallBackQuery(Update update) {
@@ -53,10 +61,6 @@ public class CommandServiceImpl implements CommandService {
         return null;
     }
 
-
-
-
-
     private SendMessage sendMessage(String chatId, String textMessage, ReplyKeyboard keyboard) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
@@ -67,7 +71,30 @@ public class CommandServiceImpl implements CommandService {
     }
 
 
+    public static InlineKeyboardMarkup maker(Map<String, String> buttons) {
+        InlineKeyboardMarkup inlineKeyboardAbout = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
 
+        setButtons(buttons, rowInLine);
+        rowsInLine.add(rowInLine);
+        inlineKeyboardAbout.setKeyboard(rowsInLine);
+
+        return inlineKeyboardAbout;
+    }
+
+    private static void setButtons(Map<String, String> buttons, List<InlineKeyboardButton> rowInLine) {
+        try {
+            for (Map.Entry<String, String> item : buttons.entrySet()) {
+                InlineKeyboardButton button = new InlineKeyboardButton();
+                button.setText(item.getValue());
+                button.setCallbackData(item.getKey());
+                rowInLine.add(button);
+            }
+        } catch (Exception e) {
+            log.warn(e.getMessage());
+        }
+    }
 
 
 
