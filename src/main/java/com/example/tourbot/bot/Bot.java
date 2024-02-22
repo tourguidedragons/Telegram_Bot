@@ -1,16 +1,15 @@
 package com.example.tourbot.bot;
 
+import com.example.tourbot.service.CommandService;
 import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-
-
     @RequiredArgsConstructor
     public class Bot extends TelegramWebhookBot {
-
+        private final CommandService commandService;
         private String webHookPath;
         private String botUserName;
         private String botToken;
@@ -23,13 +22,18 @@ import org.telegram.telegrambots.meta.api.objects.Update;
         public BotApiMethod<?> Update(Update update) {
             Message message = update.getMessage();
             if (update.hasCallbackQuery()) {
+                return commandService.validateCallBackQuery(update);
             }
             if (message.getText().startsWith("/")) {
+                return commandService.validateCommands(message);
             }
             if (message.isReply()) {
+                return commandService.validateReplyMessage(message);
             }
-            return null;
+
+            return commandService.validateMessage(message);
         }
+
 
 
         @Override

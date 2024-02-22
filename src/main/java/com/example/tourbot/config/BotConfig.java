@@ -1,6 +1,7 @@
 package com.example.tourbot.config;
 
 import com.example.tourbot.bot.Bot;
+import com.example.tourbot.service.CommandService;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,10 +17,11 @@ public class BotConfig {
     private String webHookPath;
     private String userName;
     private String botToken;
-    @Bean
-    public Bot BotConfiguration() {
 
-        Bot bot = new Bot();
+    @Bean
+    public Bot BotConfiguration(CommandService commandService) {
+
+        Bot bot = new Bot(commandService);
         bot.setBotUsername(userName);
         bot.setBotToken(botToken);
         bot.setWebhookPath(webHookPath);
