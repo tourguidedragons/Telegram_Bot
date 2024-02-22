@@ -3,6 +3,7 @@ package com.example.tourbot.bot;
 import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 
@@ -16,8 +17,20 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
         @Override
         public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
+            return Update(update);
+        }
+
+        public BotApiMethod<?> Update(Update update) {
+            Message message = update.getMessage();
+            if (update.hasCallbackQuery()) {
+            }
+            if (message.getText().startsWith("/")) {
+            }
+            if (message.isReply()) {
+            }
             return null;
         }
+
 
         @Override
         public String getBotToken() {
