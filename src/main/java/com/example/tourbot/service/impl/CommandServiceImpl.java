@@ -1,6 +1,7 @@
 package com.example.tourbot.service.impl;
 
 import com.example.tourbot.bot.Bot;
+import com.example.tourbot.exception.CurrentSessionNotFoundException;
 import com.example.tourbot.models.Question;
 import com.example.tourbot.service.CacheService;
 import com.example.tourbot.service.CommandService;
@@ -52,6 +53,7 @@ public class CommandServiceImpl implements CommandService {
         String answer = callbackQuery.getData();
         String questionKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(questionKey);
+
         if (question == null) return null;
         if (question.getKey().equals("language")) {
             cacheService.setSelectedLanguage(clientId, answer);
@@ -82,29 +84,53 @@ public class CommandServiceImpl implements CommandService {
 //        if (question.getKey().equals("language")) {
 //            return showQuestionKeyboard(question, chatId, translation);
 //        }
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(translation);
+
         if (question.getKey().equals("startDate") || question.getKey().equals("endDate")) {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setText(translation);
             sendMessage.setReplyMarkup(generateKeyboard(LocalDate.now()));
         }
-        return null;
+        return showQuestionKeyboard(question, chatId, translation);
+
     }
+
 
 
     public BotApiMethod<?> validateCommands(Message message) {
         String chatId = message.getChatId().toString();
         long clientId = message.getFrom().getId();
         if (message.getText().equals("/start")) {
-            return sendMessage(chatId, "Session started", null);
-        } else if (message.getText().equals("/stop")) {
-            return sendMessage(chatId, "Session stopped", null);
 
+            if (getActiveSession(clientId)) {
+                var currentLang = cacheService.getCurrentLanguage(clientId);
+                return new SendMessage(chatId, "");
+            } else {
+                cacheService.createSession(message);
+                var question = questionService.getQuestionByKey("language");
+                if (question.getKey().equals("language")) {
+                    cacheService.setCurrentStateQuestion(clientId, question);
+                    return showQuestionKeyboard(question, chatId, "Dil secin");
+                }
+            }
+
+        } else if (message.getText().equals("/stop")) {
+            String lang = cacheService.getCurrentLanguage(clientId);
+            cacheService.stopSession(message);
+            return new SendMessage(chatId, "stopped");
         }
-        return null;
+        return new SendMessage(chatId,"unrecognized");
 
     }
 
+    public Boolean getActiveSession(Long clientId) {
+        try {
+            return cacheService.find(clientId) != null;
+        }
+        catch (CurrentSessionNotFoundException exception){
+            return false;
+        }
+    }
     private void handleCalendar(Integer messageId, String inlineId, String chatId, Long clientId, String answer) {
 
         //cache month !!!!!
