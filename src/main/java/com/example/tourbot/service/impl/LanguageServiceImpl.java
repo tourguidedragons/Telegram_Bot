@@ -13,6 +13,6 @@ public class LanguageServiceImpl implements LanguageService {
     private final LanguageRepository repository;
     @Override
     public Language getByName(String language) {
-        return  repository.getByName(language);
+        return  repository.getByCode(language);
     }
 }

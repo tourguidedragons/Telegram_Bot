@@ -39,4 +39,15 @@ public class Question implements Serializable {
     @OneToMany(mappedBy = "question",
             cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Option> options;
+
+
+    @Override
+    public String toString() {
+        return "Question{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", key='" + key + '\'' +
+                ", pattern='" + pattern + '\'' +
+                '}';
+    }
 }
