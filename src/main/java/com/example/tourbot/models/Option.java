@@ -35,6 +35,11 @@ public class Option implements Serializable {
     private Question nextQuestion;
 
     @OneToMany(mappedBy = "option",
-            cascade = CascadeType.ALL)
+            cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Translation> translations;
+
+    @Override
+    public String toString() {
+        return "Option{}:";
+    }
 }

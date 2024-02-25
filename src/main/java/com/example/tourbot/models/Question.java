@@ -33,11 +33,11 @@ public class Question implements Serializable {
 
 
     @OneToMany(mappedBy = "question",
-            cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+            cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Translation> translations;
 
     @OneToMany(mappedBy = "question",
-            cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+            cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Option> options;
 
 
