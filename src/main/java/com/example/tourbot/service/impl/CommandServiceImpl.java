@@ -208,7 +208,33 @@ public class CommandServiceImpl implements CommandService {
         }
     }
 
+    private boolean validateDate(String text) {
+        try {
+            DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate date = LocalDate.parse(text, format);
+            return !date.isBefore(LocalDate.now());
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
+    private boolean validateQuestionAnswer(Question question, String text) {
+        if (questionService.isButton(question)) {
+            return question.getOptions()
+                    .stream().anyMatch(a ->
+                            (a.getAnswer().equals(text) || a.getTranslations()
+                                    .stream().anyMatch(t -> t.getTranslatedText().equals(text))));
+        }
+        return text.matches(question.getPattern());
+    }
+    private LocalDate getDateFromAnswer(String text) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        try {
+            return LocalDate.parse(text, formatter);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
 
 
