@@ -20,7 +20,7 @@ public class Translation  implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="option_id")
     private Option option;
 
@@ -34,5 +34,10 @@ public class Translation  implements Serializable {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "language_id")
     private Language language;
+
+    @Override
+    public String toString() {
+        return "Translation{}:";
+    }
 
 }

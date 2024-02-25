@@ -19,14 +19,15 @@ public class QuestionServiceImpl implements QuestionService {
         return questionRepository.getQuestionsByKey(key);
     }
 
-    public Boolean isText(Question question) {
+    public Boolean isButton(Question question) {
         return question.getOptions().stream()
                 .anyMatch(a -> a.getOptionType() == OptionType.BUTTON);
     }
 
     @Override
     public Question getNextQuestion(Question question, String answer) {
-        return isText(question) ? getTextOption(question) : getButtonOption(question, answer);
+
+        return !isButton(question) ? getTextOption(question) : getButtonOption(question, answer);
     }
 
     private Question getButtonOption(Question question, String answer) {
@@ -57,13 +58,5 @@ public class QuestionServiceImpl implements QuestionService {
         return translation==null? question.getContent(): translation.getTranslatedText();
     }
 
-    @Override
-    public String getOptionTranslation(Option option, String code) {
-        Translation translation = option.getTranslations().stream()
-                .filter(t -> t.getLanguage().getCode().equals(code))
-                .findFirst().orElse(null);
-
-        return translation==null? option.getAnswer(): translation.getTranslatedText();
-    }
 
 }
