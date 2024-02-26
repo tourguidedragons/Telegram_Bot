@@ -169,38 +169,16 @@ public class CommandServiceImpl implements CommandService {
         question.getOptions()
                 .forEach(o -> buttons.put(optionService.getOptionTranslation(o, code), optionService.getOptionTranslation(o, code)));
         return sendMessage(chatId, text, maker(buttons));
+        return sendMessage(chatId, text, Button.maker(buttons));
     }
 
     private BotApiMethod<?> showQuestionKeyboard(Question question, String chatId, String text) {
         Map<String, String> buttons = new LinkedHashMap<>();
         question.getOptions()
                 .forEach(o -> buttons.put(o.getAnswer(), o.getAnswer()));
-        return sendMessage(chatId, text, maker(buttons));
+        return sendMessage(chatId, text, Button.maker(buttons));
     }
 
-    private static InlineKeyboardMarkup maker(Map<String, String> buttons) {
-        InlineKeyboardMarkup inlineKeyboardAbout = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
-        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
-
-        setButtons(buttons, rowInLine);
-        rowsInLine.add(rowInLine);
-        inlineKeyboardAbout.setKeyboard(rowsInLine);
-
-        return inlineKeyboardAbout;
-    }
-
-    private static void setButtons(Map<String, String> buttons, List<InlineKeyboardButton> rowInLine) {
-        try {
-            for (Map.Entry<String, String> item : buttons.entrySet()) {
-                InlineKeyboardButton button = new InlineKeyboardButton();
-                button.setText(item.getValue());
-                button.setCallbackData(item.getKey());
-                rowInLine.add(button);
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
     }
 
     private void handleCalendar(Integer messageId, String inlineId, Long clientId, String answer) {
