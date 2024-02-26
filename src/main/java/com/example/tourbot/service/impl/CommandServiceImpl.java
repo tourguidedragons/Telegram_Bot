@@ -94,30 +94,23 @@ public class CommandServiceImpl implements CommandService {
     public BotApiMethod<?> validateCommands(Message message) {
         String chatId = message.getChatId().toString();
         long clientId = message.getFrom().getId();
-        if (message.getText().equals("/start")) {
-
-            if (getActiveSession(clientId)) {
-                var currentLang = cacheService.getCurrentLanguage(clientId);
+        String text = message.getText();
+        if (getActiveSession(clientId)) {
+            var currentLang = cacheService.getCurrentLanguage(clientId);
+            if (text.equals("/start")) {
                 return new SendMessage(chatId, SampleAnswers.getMessage("activeSession", currentLang));
-            } else {
-                cacheService.createSession(message);
-                var question = questionService.getQuestionByKey("language");
-                if (question.getKey().equals("language")) {
-                    cacheService.setCurrentStateQuestion(clientId, question);
-                    return showQuestionKeyboard(question, chatId, SampleAnswers.getMessage("languageSetup", "AZ"));
-                }
+            } else if (text.equals("/stop")) {
+                cacheService.disableActiveSession(clientId);
+                return new SendMessage(chatId, SampleAnswers.getMessage("stop", currentLang));
             }
-        } else if (message.getText().equals("/stop")) {
-            if (getActiveSession(clientId)) {
-                String lang = cacheService.getCurrentLanguage(clientId);
-                cacheService.stopSession(message);
-                return new SendMessage(chatId, SampleAnswers.getMessage("stop", lang));
-            } else {
+        } else {
+            if (text.equals("/start")) {
+                return startSession(chatId, clientId, message);
+            } else if (text.equals("/stop")) {
                 return new SendMessage(chatId, SampleAnswers.getMessage("stopActiveSession", "EN"));
             }
         }
-        return new SendMessage(chatId, "Unrecognized");
-
+        return new SendMessage(chatId, "Unrecognized command");
     }
     public BotApiMethod<?> validateReplyMessage(Message message) {
 
