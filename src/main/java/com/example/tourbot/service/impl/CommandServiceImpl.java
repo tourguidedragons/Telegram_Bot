@@ -71,8 +71,9 @@ public class CommandServiceImpl implements CommandService {
             return null;
         }
 
-        if (question.getKey().equals("startDate") || question.getKey().equals("endDate")) {
-            cacheService.setCurrentDate(clientId, getDateFromAnswer(answer));
+        if (!validateQuestionAnswer(question, answer, clientId)) {
+            handleIncorrectAnswer(chatId, messageId, clientId);
+            return postQuestion(chatId, clientId, questionService.getQuestionByKey(questionKey));
         }
         try {
 
@@ -168,7 +169,6 @@ public class CommandServiceImpl implements CommandService {
 
         question.getOptions()
                 .forEach(o -> buttons.put(optionService.getOptionTranslation(o, code), optionService.getOptionTranslation(o, code)));
-        return sendMessage(chatId, text, maker(buttons));
         return sendMessage(chatId, text, Button.maker(buttons));
     }
 
@@ -239,6 +239,17 @@ public class CommandServiceImpl implements CommandService {
         if (question.getKey().equals("startDate") || question.getKey().equals("endDate")) {
             var date = cacheService.getCurrentDate(clientId);
             sendMessage.setReplyMarkup(generateKeyboard(date));
+        if (question.getKey().equals("startDate")) {
+            if (Validation.validateDate(text, LocalDate.now())) {
+                cacheService.setCurrentDate(clientId, Validation.getDateFromAnswer(text));
+                return true;
+            }
+        }
+        if (question.getKey().equals("endDate")) {
+            if (Validation.validateDate(text, cacheService.getCurrentDate(clientId))) {
+                cacheService.setCurrentDate(clientId, Validation.getDateFromAnswer(text));
+                return true;
+            }
         }
         if (questionService.isButton(question)) return showQuestionKeyboard(question, chatId, translation, code);
 
