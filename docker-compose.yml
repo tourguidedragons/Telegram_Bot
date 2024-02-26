@@ -18,6 +18,14 @@ services:
       - "6379:6379"
     volumes:
       - redis_vol:/var/lib/redis/data
+  localRabbitMQ:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
   springapp:
     container_name: springApp
     build: .
