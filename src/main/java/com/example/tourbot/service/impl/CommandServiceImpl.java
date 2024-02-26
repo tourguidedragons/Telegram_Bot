@@ -7,7 +7,9 @@ import com.example.tourbot.service.CacheService;
 import com.example.tourbot.service.CommandService;
 import com.example.tourbot.service.OptionService;
 import com.example.tourbot.service.QuestionService;
+import com.example.tourbot.utils.Button;
 import com.example.tourbot.utils.SampleAnswers;
+import com.example.tourbot.utils.Validation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -18,14 +20,13 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageRe
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,7 +39,6 @@ import static com.example.tourbot.utils.Calendar.generateKeyboard;
 public class CommandServiceImpl implements CommandService {
     private final QuestionService questionService;
     private final OptionService optionService;
-
     private final CacheService cacheService;
     private final Bot bot;
 
@@ -51,24 +51,22 @@ public class CommandServiceImpl implements CommandService {
 
     public BotApiMethod<?> validateCallBackQuery(Update update) {
         CallbackQuery callbackQuery = update.getCallbackQuery();
-
         Message message = (Message) callbackQuery.getMessage();
         Integer messageId = message.getMessageId();
-
         long clientId = callbackQuery.getFrom().getId();
         String chatId = callbackQuery.getMessage().getChatId().toString();
         String answer = callbackQuery.getData();
         String questionKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(questionKey);
 
-        if (question == null) return null;
-        if (question.getKey().equals("language")) {
-            cacheService.setSelectedLanguage(clientId, answer);
+        if (question == null || question.getKey().equals("complete") || question.getKey().equals("waitForOffer")) return null;
 
-        }
         if (answer.equals("<") || answer.equals(">")) {
             handleCalendar(messageId, update.getCallbackQuery().getInlineMessageId(), clientId, answer);
             return null;
+        }
+        if (question.getKey().equals("language")) {
+            cacheService.setSelectedLanguage(clientId, answer);
         }
 
         if (!validateQuestionAnswer(question, answer, clientId)) {
@@ -76,19 +74,13 @@ public class CommandServiceImpl implements CommandService {
             return postQuestion(chatId, clientId, questionService.getQuestionByKey(questionKey));
         }
         try {
-
             bot.execute(new DeleteMessage(chatId, messageId));
-            bot.execute(new SendMessage(chatId, questionService.getQuestionTranslation(question, cacheService.getCurrentLanguage(clientId))));
             bot.execute(new SendMessage(chatId, answer));
-
-        } catch (TelegramApiRequestException e) {
-            throw new RuntimeException();
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
         cacheService.saveUserAnswer(clientId, question.getKey(), answer);
-        return postNewQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
-
+        return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
     }
 
     public BotApiMethod<?> validateCommands(Message message) {
@@ -112,12 +104,18 @@ public class CommandServiceImpl implements CommandService {
         }
         return new SendMessage(chatId, "Unrecognized command");
     }
-    public BotApiMethod<?> validateReplyMessage(Message message) {
 
-        long clientId = message.getFrom().getId();
-        String currentKey = cacheService.getCurrentStateQuestion(clientId);
-        Question current = questionService.getQuestionByKey(currentKey);
-        cacheService.saveUserAnswer(clientId, current.getKey(), message.getText());
+    public BotApiMethod<?> validateReplyMessage(Message message) {
+        if (message.getText().equalsIgnoreCase("да")
+                || message.getText().equalsIgnoreCase("yes")
+                || message.getText().equalsIgnoreCase("hə")) {
+
+        Long clientId = message.getFrom().getId();
+        String chatId = message.getChatId().toString();
+
+        //map selected messageid
+
+        return postQuestion(chatId, clientId, questionService.getQuestionByKey("phone"));    }
         return null;
     }
 
@@ -127,16 +125,21 @@ public class CommandServiceImpl implements CommandService {
         String answer = message.getText();
         String currentKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(currentKey);
-        String currentLang = cacheService.getCurrentLanguage(clientId);
-        if (!validateQuestionAnswer(question, answer)) {
-            try {
-                bot.execute(new SendMessage(chatId, SampleAnswers.getMessage("incorrectAnswer", currentLang)));
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
-            return postNewQuestion(chatId, clientId, questionService.getQuestionByKey(currentKey));
-        }
-        return postNewQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
+
+        if (question == null || question.getKey().equals("complete")
+                || question.getKey().equals("waitForOffer") ||  question.getKey().equals("phone")) return null;
+
+        return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
+    }
+
+    @Override
+    public BotApiMethod<?> validateContact(Message message) {
+        Long clientId = message.getFrom().getId();
+        String currentKey = cacheService.getCurrentStateQuestion(clientId);
+        Question question = questionService.getQuestionByKey(currentKey);
+        String answer = message.getContact().getPhoneNumber();
+        cacheService.saveUserAnswer(clientId, currentKey, answer);
+        return postQuestion(message.getChatId().toString(), clientId, questionService.getNextQuestion(question, answer));
     }
 
     public Boolean getActiveSession(Long clientId) {
@@ -148,18 +151,77 @@ public class CommandServiceImpl implements CommandService {
         }
     }
 
-    private SendMessage sendMessage(String chatId, String textMessage, ReplyKeyboard keyboard) {
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        if (textMessage != null && !textMessage.isEmpty()) message.setText(textMessage);
-        else return null;
-        if (keyboard != null) message.setReplyMarkup(keyboard);
-        return message;
+    private BotApiMethod<?> startSession(String chatId, long clientId, Message message) {
+        var question = questionService.getQuestionByKey("language");
+        cacheService.createSession(message);
+        cacheService.setCurrentStateQuestion(clientId, question);
+        return showQuestionKeyboard(question, chatId, SampleAnswers.getMessage("languageSetup", "EN"));
     }
+
+    private void handleIncorrectAnswer(String chatId, Integer messageId, Long clientId) {
+        try {
+            String currentLang = cacheService.getCurrentLanguage(clientId);
+            bot.execute(new SendMessage(chatId, SampleAnswers.getMessage("incorrectAnswer", currentLang)));
+            bot.execute(new DeleteMessage(chatId, messageId));
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private BotApiMethod<?> postQuestion(String chatId, Long clientId, Question question) {
+        String code = cacheService.getCurrentLanguage(clientId);
+        cacheService.setCurrentStateQuestion(clientId, question);
+        var translation = questionService.getQuestionTranslation(question, code);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(translation);
+        if (question.getKey().equals("startDate") || question.getKey().equals("endDate")) {
+            var date = cacheService.getCurrentDate(clientId);
+            sendMessage.setReplyMarkup(generateKeyboard(date));
+        }
+        if (question.getKey().equals("complete")) {
+            // the end
+        }
+        if (question.getKey().equals("phone")) {
+            sendRequestContactButton(chatId,clientId);
+            return null;
+        }
+        if (questionService.isButton(question)) return showQuestionKeyboard(question, chatId, translation, code);
+        return sendMessage;
+    }
+
+    private void sendRequestContactButton(String chatId,Long clientId) {
+        KeyboardButton button = new KeyboardButton();
+        button.setText("Request Contact");
+        button.setRequestContact(true);
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        keyboardMarkup.setOneTimeKeyboard(true);
+
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add(button);
+        keyboard.add(row);
+        keyboardMarkup.setKeyboard(keyboard);
+
+        var currentLang = cacheService.getCurrentLanguage(clientId);
+        var currentQuestion = cacheService.getCurrentStateQuestion(clientId);
+        var translation = questionService.getQuestionTranslation(questionService.getQuestionByKey(currentQuestion), currentLang);
+        SendMessage message = new SendMessage(chatId, translation);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            bot.execute(message);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+        }
+    }
+
 
     private BotApiMethod<?> showQuestionKeyboard(Question question, String chatId, String text, String code) {
         Map<String, String> buttons = new LinkedHashMap<>();
-
         question.getOptions()
                 .forEach(o -> buttons.put(optionService.getOptionTranslation(o, code), optionService.getOptionTranslation(o, code)));
         return sendMessage(chatId, text, Button.maker(buttons));
@@ -172,6 +234,13 @@ public class CommandServiceImpl implements CommandService {
         return sendMessage(chatId, text, Button.maker(buttons));
     }
 
+    private BotApiMethod<?> sendMessage(String chatId, String textMessage, ReplyKeyboard keyboard) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        if (textMessage != null && !textMessage.isEmpty()) message.setText(textMessage);
+        else return null;
+        if (keyboard != null) message.setReplyMarkup(keyboard);
+        return message;
     }
 
     private void handleCalendar(Integer messageId, String inlineId, Long clientId, String answer) {
@@ -194,44 +263,15 @@ public class CommandServiceImpl implements CommandService {
         cacheService.setCurrentDate(clientId, currentDate);
     }
 
-    private boolean validateDate(String text) {
-        try {
-            DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate date = LocalDate.parse(text, format);
-            return !date.isBefore(LocalDate.now());
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private boolean validateQuestionAnswer(Question question, String text) {
+    private boolean validateQuestionAnswer(Question question, String text, Long clientId) {
         if (questionService.isButton(question)) {
             return question.getOptions()
                     .stream().anyMatch(a ->
                             (a.getAnswer().equals(text) || a.getTranslations()
                                     .stream().anyMatch(t -> t.getTranslatedText().equals(text))));
         }
-        return text.matches(question.getPattern());
-    }
-    private LocalDate getDateFromAnswer(String text) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        try {
-            return LocalDate.parse(text, formatter);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+        if (question.getPattern() != null) return text.matches(question.getPattern());
 
-    private BotApiMethod<?> postNewQuestion(String chatId, Long clientId, Question question) {
-        String code = cacheService.getCurrentLanguage(clientId);
-        cacheService.setCurrentStateQuestion(clientId, question);
-        var translation = questionService.getQuestionTranslation(question, code);
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(translation);
-        if (question.getKey().equals("startDate") || question.getKey().equals("endDate")) {
-            var date = cacheService.getCurrentDate(clientId);
-            sendMessage.setReplyMarkup(generateKeyboard(date));
         if (question.getKey().equals("startDate")) {
             if (Validation.validateDate(text, LocalDate.now())) {
                 cacheService.setCurrentDate(clientId, Validation.getDateFromAnswer(text));
@@ -244,9 +284,9 @@ public class CommandServiceImpl implements CommandService {
                 return true;
             }
         }
-        if (questionService.isButton(question)) return showQuestionKeyboard(question, chatId, translation, code);
 
-        return sendMessage;
+
+
+        return false;
     }
-
 }
