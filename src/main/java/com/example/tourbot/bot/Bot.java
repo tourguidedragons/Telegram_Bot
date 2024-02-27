@@ -20,23 +20,29 @@ public class Bot extends TelegramWebhookBot {
     }
 
     public BotApiMethod<?> Update(Update update) {
-//        if (handleUpdate(update)) {
-        Message message = update.getMessage();
-        if (update.hasCallbackQuery()) {
-            return commandService.validateCallBackQuery(update);
+
+        if (commandService.acceptUpdate(update)) {
+            Message message = update.getMessage();
+            if (update.hasCallbackQuery()) {
+                return commandService.validateCallBackQuery(update);
+            }
+            if (message.hasContact()) {
+                return commandService.validateContact(message);
+            }
+            if (message.getText().startsWith("/")) {
+                return commandService.validateCommands(message);
+            }
+            if (message.isReply()) {
+                return commandService.validateReplyMessage(message);
+            }
+            return commandService.validateMessage(message);
+        } else if (update.hasMessage()) {
+            Message message = update.getMessage();
+            if (message.hasContact()) {
+                return commandService.validateContact(message);
+            }
         }
-        if (message.hasContact()) {
-            return commandService.validateContact(message);
-        }
-        if (message.getText().startsWith("/")) {
-            return commandService.validateCommands(message);
-        }
-        if (message.isReply()) {
-            return commandService.validateReplyMessage(message);
-        }
-        return commandService.validateMessage(message);
-//        }
-//        return null;
+        return null;
     }
 
     public boolean handleUpdate(Update update) {
