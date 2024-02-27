@@ -9,5 +9,7 @@ public interface CommandService {
     BotApiMethod<?> validateCommands(Message message);
     BotApiMethod<?> validateReplyMessage(Message message);
     BotApiMethod<?> validateMessage(Message message);
+    BotApiMethod<?> validateContact(Message message);
+
 
 }
