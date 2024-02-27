@@ -8,15 +8,18 @@ public class SampleAnswers {
     private static final Map<String, Map<String, String>> messages = new HashMap<>();
 
     static {
-        Map<String, String> enMessages = new HashMap<>();
-        enMessages.put("start", "Type /start to start");
-        enMessages.put("stop", "Current session is closed. Restart session by typing /start");
-        enMessages.put("activeSession", "You have active session, please first type /stop to restart");
-        enMessages.put("stopActiveSession", "You don't have active session, please type /start to start");
-        enMessages.put("languageSetup", "Select bot language");
-        enMessages.put("incorrectAnswer", "Incorrect answer!");
-        enMessages.put("unrecognizedCommand", "Unrecognized command! Enter again");
-        enMessages.put("selectedLanguage", "Selected language:");
+        Map<String, String> defaultMessages = new HashMap<>();
+        defaultMessages.put("start", "Type /start to start");
+        defaultMessages.put("stop", "Current session is closed. Restart session by typing /start");
+        defaultMessages.put("activeSession", "You have active session, please first type /stop to restart");
+        defaultMessages.put("stopActiveSession", "You don't have active session, please type /start to start");
+        defaultMessages.put("languageSetup", "Select bot language");
+        defaultMessages.put("incorrectAnswer", "Incorrect answer!");
+        defaultMessages.put("unrecognizedCommand", "Unrecognized command! Enter again");
+        defaultMessages.put("selectedLanguage", "Selected language:");
+        defaultMessages.put("waitForOffers", "We are preparing offers for you, please wait");
+        defaultMessages.put("loadOfferQuestion", "Do you want to load new offers?");
+        defaultMessages.put("selectOffer", "To select an offer, reply to the image and enter 'yes'");
 
         Map<String, String> ruMessages = new HashMap<>();
         ruMessages.put("start", "Введите /start, чтобы начать");
@@ -27,21 +30,26 @@ public class SampleAnswers {
         ruMessages.put("incorrectAnswer", "Неправильный ответ!");
         ruMessages.put("unrecognizedCommand", "Неверная команда! Введите запрос заново");
         ruMessages.put("selectedLanguage", "Выбранный язык:");
+        ruMessages.put("waitForOffers", "Мы готовим предложения для вас, пожалуйста, подождите");
+        ruMessages.put("loadOfferQuestion", "Хотите загрузить новые предложения?");
+        ruMessages.put("selectOffer", "Чтобы выбрать предложение, ответьте на изображение и введите 'да'");
 
+        Map<String, String> azMessages = new HashMap<>();
+        azMessages.put("start", "Başlamaq üçün / start yazın");
+        azMessages.put("stop", "Sessiyanız bağlandı. Başlamaq üçün /start yazın");
+        azMessages.put("activeSession", "Sizin aktiv sessiyanız var, yenidən başlamaq üçün /stop komandasını daxil edin");
+        azMessages.put("stopActiveSession", "Sizin aktiv sessiyanız yoxdur, yeni sessiya yaratmaq üçün /start komandasını daxil edin");
+        azMessages.put("languageSetup", "Bot dilini seçin");
+        azMessages.put("incorrectAnswer", "Yanlış cavab!");
+        azMessages.put("unrecognizedCommand", "Yanlış komanda! Yenidən daxil edin");
+        azMessages.put("selectedLanguage", "Seçilmiş dil:");
+        azMessages.put("waitForOffers", "Sizin üçün təkliflər hazırlıyırıq.Zəhmət olmasa gözləyin");
+        azMessages.put("loadOfferQuestion", " Yeni təkliflər görmək istəyirsinizmi");
+        azMessages.put("selectOffer", " Təklifi seçmək üçün şəkilə reply edib, 'yes' yazib gonderin");
 
-        Map<String, String> defaultMessages = new HashMap<>();
-        defaultMessages.put("start", "Başlamaq üçün / start yazın");
-        defaultMessages.put("stop", "Sessiyanız bağlandı. Başlamaq üçün /start yazın");
-        defaultMessages.put("activeSession", "Sizin aktiv sessiyanız var, yenidən başlamaq üçün /stop komandasını daxil edin");
-        defaultMessages.put("stopActiveSession", "Sizin aktiv sessiyanız yoxdur, yeni sessiya yaratmaq üçün /start komandasını daxil edin");
-        defaultMessages.put("languageSetup", "Bot dilini seçin");
-        defaultMessages.put("incorrectAnswer", "Yanlış cavab!");
-        defaultMessages.put("unrecognizedCommand", "Yanlış komanda! Yenidən daxil edin");
-        defaultMessages.put("selectedLanguage", "Seçilmiş dil:");
-
-        messages.put("EN", enMessages);
-        messages.put("RU", ruMessages);
         messages.put("default", defaultMessages);
+        messages.put("RU", ruMessages);
+        messages.put("AZ", azMessages);
     }
 
     public static String getMessage(String messageKey, String languageCode) {

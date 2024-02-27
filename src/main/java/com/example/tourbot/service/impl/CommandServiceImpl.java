@@ -12,12 +12,16 @@ import com.example.tourbot.utils.SampleAnswers;
 import com.example.tourbot.utils.Validation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -26,6 +30,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -59,7 +65,8 @@ public class CommandServiceImpl implements CommandService {
         String questionKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(questionKey);
 
-        if (question == null || question.getKey().equals("complete") || question.getKey().equals("waitForOffer")) return null;
+        if (question == null || question.getKey().equals("complete") || question.getKey().equals("waitForOffer"))
+            return null;
 
         if (answer.equals("<") || answer.equals(">")) {
             handleCalendar(messageId, update.getCallbackQuery().getInlineMessageId(), clientId, answer);
@@ -110,12 +117,13 @@ public class CommandServiceImpl implements CommandService {
                 || message.getText().equalsIgnoreCase("yes")
                 || message.getText().equalsIgnoreCase("hə")) {
 
-        Long clientId = message.getFrom().getId();
-        String chatId = message.getChatId().toString();
+            Long clientId = message.getFrom().getId();
+            String chatId = message.getChatId().toString();
 
-        //map selected messageid
+            //map selected messageid
 
-        return postQuestion(chatId, clientId, questionService.getQuestionByKey("phone"));    }
+            return postQuestion(chatId, clientId, questionService.getQuestionByKey("phone"));
+        }
         return null;
     }
 
@@ -126,8 +134,15 @@ public class CommandServiceImpl implements CommandService {
         String currentKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(currentKey);
 
+
+        if (!validateQuestionAnswer(question, answer, clientId)) {
+            handleIncorrectAnswer(chatId, message.getMessageId(), clientId);
+            return postQuestion(chatId, clientId, questionService.getQuestionByKey(question.getKey()));
+        }
         if (question == null || question.getKey().equals("complete")
-                || question.getKey().equals("waitForOffer") ||  question.getKey().equals("phone")) return null;
+                || question.getKey().equals("waitForOffer") || question.getKey().equals("phone")) return null;
+
+
 
         return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
     }
@@ -184,14 +199,14 @@ public class CommandServiceImpl implements CommandService {
             // the end
         }
         if (question.getKey().equals("phone")) {
-            sendRequestContactButton(chatId,clientId);
+            sendRequestContactButton(chatId, clientId);
             return null;
         }
         if (questionService.isButton(question)) return showQuestionKeyboard(question, chatId, translation, code);
         return sendMessage;
     }
 
-    private void sendRequestContactButton(String chatId,Long clientId) {
+    private void sendRequestContactButton(String chatId, Long clientId) {
         KeyboardButton button = new KeyboardButton();
         button.setText("Request Contact");
         button.setRequestContact(true);
@@ -260,7 +275,6 @@ public class CommandServiceImpl implements CommandService {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-        cacheService.setCurrentDate(clientId, currentDate);
     }
 
     private boolean validateQuestionAnswer(Question question, String text, Long clientId) {
@@ -286,7 +300,47 @@ public class CommandServiceImpl implements CommandService {
         }
 
 
-
         return false;
+    }
+
+    public Boolean acceptUpdate(Update update) {
+        Long clientId = null;
+        if (update.hasCallbackQuery()) {
+            clientId = update.getCallbackQuery().getFrom().getId();
+        } else if (update.hasMessage()) {
+            if (!update.getMessage().hasText()) return false;
+            if (update.getMessage().getText().startsWith("/")) return true;
+            clientId = update.getMessage().getFrom().getId();
+        } else {
+            return false;
+        }
+        if (!getActiveSession(clientId)) {
+            try {
+                bot.execute(new SendMessage(clientId.toString(),
+                        SampleAnswers.getMessage("stopActiveSession", "EN")));
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+
+            return false;
+        }
+        return true;
+    }
+
+    public void sendPhoto(long chatId) {
+        try {
+            Resource resource = new ClassPathResource("tr.png");
+            File file = resource.getFile();
+
+            SendPhoto sendPhoto = new SendPhoto();
+            sendPhoto.setChatId(chatId);
+            sendPhoto.setCaption("imageCaption");
+            InputFile photo = new InputFile(file);
+            sendPhoto.setPhoto(photo);
+
+            bot.execute(sendPhoto);
+        } catch (IOException | TelegramApiException e) {
+            throw new RuntimeException("Failed to send photo", e);
+        }
     }
 }
