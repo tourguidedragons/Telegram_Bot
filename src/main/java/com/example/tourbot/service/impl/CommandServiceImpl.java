@@ -3,10 +3,7 @@ package com.example.tourbot.service.impl;
 import com.example.tourbot.bot.Bot;
 import com.example.tourbot.exception.CurrentSessionNotFoundException;
 import com.example.tourbot.models.Question;
-import com.example.tourbot.service.CacheService;
-import com.example.tourbot.service.CommandService;
-import com.example.tourbot.service.OptionService;
-import com.example.tourbot.service.QuestionService;
+import com.example.tourbot.service.*;
 import com.example.tourbot.utils.Button;
 import com.example.tourbot.utils.SampleAnswers;
 import com.example.tourbot.utils.Validation;
@@ -47,12 +44,14 @@ public class CommandServiceImpl implements CommandService {
     private final OptionService optionService;
     private final CacheService cacheService;
     private final Bot bot;
+    private final ImageService sd;
 
-    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, @Lazy Bot bot) {
+    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, @Lazy Bot bot, ImageService sd) {
         this.questionService = questionService;
         this.optionService = optionService;
         this.cacheService = cacheService;
         this.bot = bot;
+        this.sd = sd;
     }
 
     public BotApiMethod<?> validateCallBackQuery(Update update) {
@@ -94,6 +93,7 @@ public class CommandServiceImpl implements CommandService {
         String chatId = message.getChatId().toString();
         long clientId = message.getFrom().getId();
         String text = message.getText();
+
         if (getActiveSession(clientId)) {
             var currentLang = cacheService.getCurrentLanguage(clientId);
             if (text.equals("/start")) {
@@ -141,7 +141,6 @@ public class CommandServiceImpl implements CommandService {
         }
         if (question == null || question.getKey().equals("complete")
                 || question.getKey().equals("waitForOffer") || question.getKey().equals("phone")) return null;
-
 
 
         return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
@@ -327,20 +326,5 @@ public class CommandServiceImpl implements CommandService {
         return true;
     }
 
-    public void sendPhoto(long chatId) {
-        try {
-            Resource resource = new ClassPathResource("tr.png");
-            File file = resource.getFile();
-
-            SendPhoto sendPhoto = new SendPhoto();
-            sendPhoto.setChatId(chatId);
-            sendPhoto.setCaption("imageCaption");
-            InputFile photo = new InputFile(file);
-            sendPhoto.setPhoto(photo);
-
-            bot.execute(sendPhoto);
-        } catch (IOException | TelegramApiException e) {
-            throw new RuntimeException("Failed to send photo", e);
-        }
-    }
+ 
 }
