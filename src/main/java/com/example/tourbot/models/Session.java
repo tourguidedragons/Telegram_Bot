@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -22,7 +23,7 @@ public class Session implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    private UUID uuid;
     private Long clientId;
 
     private Long chatId;
@@ -34,8 +35,8 @@ public class Session implements Serializable {
     private Boolean isActive;
 
     @ElementCollection
-    @CollectionTable(name="sessionHistory")
-    @MapKeyColumn(name="qkey")
+    @CollectionTable(name = "sessionHistory")
+    @MapKeyColumn(name = "qkey")
     private Map<String, String> sessionHistory;
 
 
@@ -43,5 +44,8 @@ public class Session implements Serializable {
             fetch = FetchType.EAGER)
     private List<Offer> travelPackages;
 
-
+    @Override
+    public String toString() {
+        return "";
+    }
 }
