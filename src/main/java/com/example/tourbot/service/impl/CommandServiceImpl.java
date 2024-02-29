@@ -1,8 +1,11 @@
 package com.example.tourbot.service.impl;
 
 import com.example.tourbot.bot.Bot;
+import com.example.tourbot.exception.ActiveExceptionNotFound;
 import com.example.tourbot.exception.CurrentSessionNotFoundException;
+import com.example.tourbot.models.Offer;
 import com.example.tourbot.models.Question;
+import com.example.tourbot.models.Session;
 import com.example.tourbot.service.*;
 import com.example.tourbot.utils.Button;
 import com.example.tourbot.utils.SampleAnswers;
@@ -37,13 +40,19 @@ public class CommandServiceImpl implements CommandService {
     private final QuestionService questionService;
     private final OptionService optionService;
     private final CacheService cacheService;
+    private final SessionService sessionService;
+    private final OfferService offerService;
+    private final ImageService imageService;
     private final Bot bot;
     private final ImageService imageService;
 
-    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, @Lazy Bot bot, ImageService imageService) {
+    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, SessionService sessionService, OfferService offerService, ImageService imageService, @Lazy Bot bot) {
         this.questionService = questionService;
         this.optionService = optionService;
         this.cacheService = cacheService;
+        this.sessionService = sessionService;
+        this.offerService = offerService;
+        this.imageService = imageService;
         this.bot = bot;
         this.imageService = imageService;
     }
@@ -60,6 +69,10 @@ public class CommandServiceImpl implements CommandService {
         String questionKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(questionKey);
 
+        if (answer.equals("next")) {
+            sendOffers(clientId);
+            return null;
+        }
         if (question == null || question.getKey().equals("complete") || question.getKey().equals("waitForOffer"))
             return null;
         if (answer.equals("<") || answer.equals(">")) {
@@ -312,9 +325,56 @@ public class CommandServiceImpl implements CommandService {
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
             }
-
             return false;
         }
         return true;
     }
+
+
+    public void sendOffers(Long clientId) throws ActiveExceptionNotFound {
+        Session session = sessionService.findByClientId(clientId)
+                .stream().filter(Session::getIsActive).findFirst()
+                .orElseThrow(() -> new ActiveExceptionNotFound("CurrentSession not found with clientId: " + clientId));
+
+        cacheService.getPendingOffers(session.getUuid()).forEach(c -> {
+            Offer offer = Offer.builder()
+                    .content(c.getContent())
+                    .uuid(c.getUuid())
+                    .image(c.getImage())
+                    .isSent(false).session(session).build();
+
+            validateOffers(offer);
+            offerService.save(offer);
+            cacheService.clearPendingOffers(c);
+        });
+    }
+
+    public void validateOffers(Offer offer) {
+        var count = cacheService.pendingCount(offer.getUuid());
+        if (count < 5) {
+            Map<String, String> buttons = new LinkedHashMap<>();
+            buttons.put(offer.getMessageId().toString(), "Click to choose");
+            var messageId = imageService.sendPhotoToChat(offer.getSession().getClientId(), offer.getImage(), offer.getContent(), Button.maker(buttons));
+            offer.setMessageId(messageId);
+
+        } else if (count == 5) {
+            Map<String, String> buttons = new LinkedHashMap<>();
+            buttons.put("next", "next");
+            var currentLang = cacheService.getCurrentLanguage(offer.getSession().getClientId());
+
+            SendMessage message = SendMessage.builder()
+                    .chatId(offer.getSession().getChatId())
+                    .text(SampleAnswers.getMessage("loadOffer", currentLang))
+                    .replyMarkup(Button.maker(buttons))
+                    .build();
+            try {
+                bot.execute(message);
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+    }
+
 }
