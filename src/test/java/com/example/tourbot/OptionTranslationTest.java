@@ -30,7 +30,7 @@ public class OptionTranslationTest {
     OptionService service;
     @Mock
     private OptionRepository repository;
-    static Question question;
+    static Option option;
 
     @BeforeAll
     void executeBefore() {
@@ -56,7 +56,7 @@ public class OptionTranslationTest {
                         )).build());
 
 
-        var option =   Option.builder().optionType(OptionType.BUTTON)
+       option =   Option.builder().optionType(OptionType.BUTTON)
                 .answer("text1").translations(List.of(
                         Translation.builder().translatedText("Click").language(Language.builder().code("EN").build()).build(),
                         Translation.builder().translatedText("Bas").language(Language.builder().code("AZ").build()).build(),
@@ -70,13 +70,6 @@ public class OptionTranslationTest {
     @Test
     @DisplayName("Option - En")
     void getOptionEnglish(){
-
-      var option = Option.builder().optionType(OptionType.BUTTON)
-                .answer("text1").translations(List.of(
-                        Translation.builder().translatedText("click").language(Language.builder().code("EN").build()).build(),
-                        Translation.builder().translatedText("bas").language(Language.builder().code("AZ").build()).build(),
-                        Translation.builder().translatedText("жми").language(Language.builder().code("RU").build()).build()
-                )).build();
        var translation = service.getOptionTranslation(option, "EN");
         Assertions.assertTrue(translation.equals("click") || translation.equals("text1"));
     }
@@ -84,13 +77,6 @@ public class OptionTranslationTest {
     @Test
     @DisplayName("Option - RU")
     void getOptionRussian(){
-
-        var option = Option.builder().optionType(OptionType.BUTTON)
-                .answer("text1").translations(List.of(
-                        Translation.builder().translatedText("click").language(Language.builder().code("EN").build()).build(),
-                        Translation.builder().translatedText("bas").language(Language.builder().code("AZ").build()).build()
-//                        Translation.builder().translatedText("жми").language(Language.builder().code("RU").build()).build()
-                )).build();
         var translation = service.getOptionTranslation(option, "RU");
         Assertions.assertTrue(translation.equals("жми") || translation.equals("text1"));
     }
