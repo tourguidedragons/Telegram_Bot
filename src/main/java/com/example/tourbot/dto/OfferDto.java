@@ -4,20 +4,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.redis.core.RedisHash;
 
-import java.io.Serializable;
-
-
+import java.util.UUID;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class OfferDto implements Serializable {
-    private Long clientId;
-    private String name;
-    private String surname;
-    private String username;
-    private String phone;
-    private Integer offerId;
+@NoArgsConstructor
+@Builder
+@RedisHash
+public class OfferDto {
+    private Integer id;
+    private byte[] image;
+    private String content;
+    private Boolean isSent;
+    private UUID uuid;
 }
