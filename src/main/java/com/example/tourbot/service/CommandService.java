@@ -10,7 +10,7 @@ public interface CommandService {
     BotApiMethod<?> validateReplyMessage(Message message);
     BotApiMethod<?> validateMessage(Message message);
     BotApiMethod<?> validateContact(Message message);
-   Boolean acceptUpdate(Update update);
+   Boolean canHandleUpdate(Update update);
 
 
 }

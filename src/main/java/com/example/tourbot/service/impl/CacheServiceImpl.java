@@ -1,17 +1,15 @@
 package com.example.tourbot.service.impl;
 
 import com.example.tourbot.bot.Bot;
+import com.example.tourbot.dto.OfferDto;
 import com.example.tourbot.exception.CurrentSessionNotFoundException;
-import com.example.tourbot.models.CurrentSession;
-import com.example.tourbot.models.Language;
-import com.example.tourbot.models.Question;
-import com.example.tourbot.models.Session;
-import com.example.tourbot.repository.RedisRepository;
+import com.example.tourbot.models.*;
+import com.example.tourbot.repository.redis.PendingOfferRepository;
+import com.example.tourbot.repository.redis.RedisRepository;
 import com.example.tourbot.service.CacheService;
 import com.example.tourbot.service.LanguageService;
 import com.example.tourbot.service.SessionService;
 import com.example.tourbot.utils.SampleAnswers;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -22,20 +20,25 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
 public class CacheServiceImpl implements CacheService {
     private final RedisRepository redisRepository;
+    private final PendingOfferRepository pendingOfferRepository;
     private final LanguageService languageService;
     private final SessionService sessionService;
-private final Bot bot;
-    public CacheServiceImpl(RedisRepository redisRepository,LanguageService languageService, SessionService sessionService, @Lazy Bot bot) {
+    private final Bot bot;
+
+    public CacheServiceImpl(RedisRepository redisRepository, PendingOfferRepository pendingOfferRepository, LanguageService languageService, SessionService sessionService, @Lazy Bot bot) {
         this.redisRepository = redisRepository;
+        this.pendingOfferRepository = pendingOfferRepository;
         this.languageService = languageService;
         this.sessionService = sessionService;
         this.bot = bot;
     }
+
     @Override
     public void createSession(Message message) {
         CurrentSession session = CurrentSession.builder()
@@ -116,8 +119,9 @@ private final Bot bot;
         session.setHistory(null);
         redisRepository.save(session);
     }
+
     @Override
-    public void disableActiveSession(Long clientId){
+    public void disableActiveSession(Long clientId) {
         CurrentSession session = find(clientId);
         redisRepository.delete(session);
         List<Session> requests = sessionService.findByClientId(clientId);
@@ -127,16 +131,33 @@ private final Bot bot;
                     sessionService.save(r);
                 });
     }
+
     @Override
     public void expiredSession(Session session) {
         String lang = getCurrentLanguage(session.getClientId());
         disableActiveSession(session.getClientId());
         try {
             bot.execute(new SendMessage(session.getChatId().toString(),
-                    SampleAnswers.getMessage("",lang)));
+                    SampleAnswers.getMessage("", lang)));
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public List<OfferDto> getPendingOffers(UUID uuid) {
+        List<OfferDto> offers = pendingOfferRepository.findAllByUuid(uuid);
+        return offers.stream().filter(c -> !c.getIsSent()).collect(Collectors.toList());
+    }
+
+    @Override
+    public void clearPendingOffers(OfferDto offer) {
+        pendingOfferRepository.delete(offer);
+    }
+
+    @Override
+    public int pendingCount(UUID uuid) {
+      return pendingOfferRepository.findAllByUuid(uuid).size();
     }
 
 }
