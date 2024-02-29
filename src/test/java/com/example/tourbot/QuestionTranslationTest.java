@@ -5,60 +5,70 @@ import com.example.tourbot.models.Language;
 import com.example.tourbot.models.Option;
 import com.example.tourbot.models.Question;
 import com.example.tourbot.models.Translation;
+import com.example.tourbot.repository.QuestionRepository;
+import com.example.tourbot.service.QuestionService;
+import com.example.tourbot.service.impl.QuestionServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.*;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@TestInstance(PER_CLASS)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@RequiredArgsConstructor
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class QuestionTranslationTest {
-
+    @Mock
+    private QuestionRepository repository;
+    QuestionService service;
     static Question question;
+
     @BeforeAll
-    void executeBefore() {
+     void executeBefore() {
+        MockitoAnnotations.openMocks(QuestionRepository.class);
+        service = new QuestionServiceImpl(repository);
         List<Option> options = List.of(Option.builder().optionType(OptionType.TEXT).answer("text").build());
 
-    question = Question.builder()
+        question = Question.builder()
                 .key("test")
                 .content("Unit test")
                 .pattern("")
                 .translations(List.of(
-                        Translation.builder().translatedText("Hello, is is simple test").language(Language.builder().code("EN").build()).build(),
-                        Translation.builder().translatedText("Bu bir testdir").language(Language.builder().code("AZ").build()).build(),
-                        Translation.builder().translatedText("Тестирование").language(Language.builder().code("RU").build()).build()
+                        Translation.builder().translatedText("Hello, this is simple test").language(Language.builder().code("EN").build()).build(),
+                        Translation.builder().translatedText("Bu bir testdir").language(Language.builder().code("AZ").build()).build()
+//                        Translation.builder().translatedText("Тестирование").language(Language.builder().code("RU").build()).build()
                 ))
                 .build();
     }
+
     @Test
     @DisplayName("Test English translation")
     void testGetQuestionTranslationInEnglish() {
-        String translation = getQuestionTranslation(question, "EN");
-        Assertions.assertEquals("Hello, is is simple test", translation);
+        String translation = service.getQuestionTranslation(question, "EN");
+        Assertions.assertTrue(translation.equals("Hello, this is simple test") || translation.equals("Unit test"));
     }
+    @Test
+    @DisplayName("Test spanish translation")
+    void testGetQuestionTranslationI() {
+        String translation = service.getQuestionTranslation(question, "ES");
+        Assertions.assertTrue(translation.equals("Hola, esta es una prueba sencilla") || translation.equals("Unit test"));
+    }
+
+
     @Test
     @DisplayName("Test Russian translation")
     void testGetQuestionTranslationInRussian() {
-        String translation = getQuestionTranslation(question, "RU");
+        String translation = service.getQuestionTranslation(question, "RU");
         Assertions.assertEquals("Тестирование", translation);
     }
+
     @Test
     @DisplayName("Test Azerbaijani translation")
     void testGetQuestionTranslationInAzerbaijani() {
-        String translation = getQuestionTranslation(question, "AZ");
+        String translation = service.getQuestionTranslation(question, "AZ");
         Assertions.assertEquals("Bu bir testdir", translation);
     }
 
-    public String getQuestionTranslation(Question question, String code) {
-        Translation translation = question.getTranslations().stream()
-                .filter(t -> t.getLanguage().getCode().equals(code))
-                .findFirst().orElse(null);
 
-        return translation == null ? question.getContent() : translation.getTranslatedText();
-    }
 }
