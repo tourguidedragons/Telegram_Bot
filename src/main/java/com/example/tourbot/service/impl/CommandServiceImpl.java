@@ -1,7 +1,7 @@
 package com.example.tourbot.service.impl;
 
 import com.example.tourbot.bot.Bot;
-import com.example.tourbot.exception.ActiveExceptionNotFound;
+import com.example.tourbot.exception.ActiveSessionNotFoundException;
 import com.example.tourbot.exception.CurrentSessionNotFoundException;
 import com.example.tourbot.models.Offer;
 import com.example.tourbot.models.Question;
@@ -44,7 +44,6 @@ public class CommandServiceImpl implements CommandService {
     private final OfferService offerService;
     private final ImageService imageService;
     private final Bot bot;
-    private final ImageService imageService;
 
     public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, SessionService sessionService, OfferService offerService, ImageService imageService, @Lazy Bot bot) {
         this.questionService = questionService;
@@ -54,7 +53,6 @@ public class CommandServiceImpl implements CommandService {
         this.offerService = offerService;
         this.imageService = imageService;
         this.bot = bot;
-        this.imageService = imageService;
     }
 
     @Override
@@ -196,10 +194,7 @@ public class CommandServiceImpl implements CommandService {
            cacheService.endCurrentSession(clientId);
         }
         if (question.getKey().equals("waitForOffer")) {
-        Map<String, String> buttons = new LinkedHashMap<>();
-        buttons.put("picture2", "picture1");
-        imageService.sendPhotoToChat(clientId, "ooo.png", "text", Button.maker(buttons));
-            return null;
+      
         }
         if (question.getKey().equals("phone")) {
             sendRequestContactButton(chatId, clientId);
@@ -331,10 +326,10 @@ public class CommandServiceImpl implements CommandService {
     }
 
 
-    public void sendOffers(Long clientId) throws ActiveExceptionNotFound {
+    public void sendOffers(Long clientId) throws ActiveSessionNotFoundException {
         Session session = sessionService.findByClientId(clientId)
                 .stream().filter(Session::getIsActive).findFirst()
-                .orElseThrow(() -> new ActiveExceptionNotFound("CurrentSession not found with clientId: " + clientId));
+                .orElseThrow(() -> new ActiveSessionNotFoundException("CurrentSession not found with clientId: " + clientId));
 
         cacheService.getPendingOffers(session.getUuid()).forEach(c -> {
             Offer offer = Offer.builder()
