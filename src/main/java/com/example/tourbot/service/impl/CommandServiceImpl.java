@@ -303,7 +303,8 @@ public class CommandServiceImpl implements CommandService {
         return false;
     }
 
-    public Boolean acceptUpdate(Update update) {
+    @Override
+    public Boolean canHandleUpdate(Update update) {
         Long clientId = null;
         if (update.hasCallbackQuery()) {
             clientId = update.getCallbackQuery().getFrom().getId();
