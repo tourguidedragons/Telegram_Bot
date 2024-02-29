@@ -21,13 +21,14 @@ public class ImageService extends DefaultAbsSender {
 
     public void sendPhotoToChat(Long chatId, String photoFilePath, String caption, ReplyKeyboard keyboard) {
         try {
+            InputFile inputFile = new InputFile();
+            inputFile.setMedia(new File(photoFilePath));
 
             SendPhoto sendPhoto = new SendPhoto();
             sendPhoto.setChatId(chatId);
-            InputFile inputFile = new InputFile();
-            inputFile.setMedia(new File(photoFilePath));
             sendPhoto.setPhoto(inputFile);
             sendPhoto.setCaption(caption);
+
             sendPhoto.setReplyMarkup(keyboard);
             this.execute(sendPhoto);
         } catch (TelegramApiException e) {

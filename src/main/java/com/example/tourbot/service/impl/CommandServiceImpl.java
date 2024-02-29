@@ -3,25 +3,18 @@ package com.example.tourbot.service.impl;
 import com.example.tourbot.bot.Bot;
 import com.example.tourbot.exception.CurrentSessionNotFoundException;
 import com.example.tourbot.models.Question;
-import com.example.tourbot.service.CacheService;
-import com.example.tourbot.service.CommandService;
-import com.example.tourbot.service.OptionService;
-import com.example.tourbot.service.QuestionService;
+import com.example.tourbot.service.*;
 import com.example.tourbot.utils.Button;
 import com.example.tourbot.utils.SampleAnswers;
 import com.example.tourbot.utils.Validation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -30,8 +23,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -47,18 +38,22 @@ public class CommandServiceImpl implements CommandService {
     private final OptionService optionService;
     private final CacheService cacheService;
     private final Bot bot;
+    private final ImageService imageService;
 
-    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, @Lazy Bot bot) {
+    public CommandServiceImpl(QuestionService questionService, OptionService optionService, CacheService cacheService, @Lazy Bot bot, ImageService imageService) {
         this.questionService = questionService;
         this.optionService = optionService;
         this.cacheService = cacheService;
         this.bot = bot;
+        this.imageService = imageService;
     }
 
+    @Override
     public BotApiMethod<?> validateCallBackQuery(Update update) {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         Message message = (Message) callbackQuery.getMessage();
         Integer messageId = message.getMessageId();
+
         long clientId = callbackQuery.getFrom().getId();
         String chatId = callbackQuery.getMessage().getChatId().toString();
         String answer = callbackQuery.getData();
@@ -67,15 +62,15 @@ public class CommandServiceImpl implements CommandService {
 
         if (question == null || question.getKey().equals("complete") || question.getKey().equals("waitForOffer"))
             return null;
-
         if (answer.equals("<") || answer.equals(">")) {
             handleCalendar(messageId, update.getCallbackQuery().getInlineMessageId(), clientId, answer);
             return null;
         }
+
+
         if (question.getKey().equals("language")) {
             cacheService.setSelectedLanguage(clientId, answer);
         }
-
         if (!validateQuestionAnswer(question, answer, clientId)) {
             handleIncorrectAnswer(chatId, messageId, clientId);
             return postQuestion(chatId, clientId, questionService.getQuestionByKey(questionKey));
@@ -90,10 +85,12 @@ public class CommandServiceImpl implements CommandService {
         return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
     }
 
+    @Override
     public BotApiMethod<?> validateCommands(Message message) {
         String chatId = message.getChatId().toString();
         long clientId = message.getFrom().getId();
         String text = message.getText();
+
         if (getActiveSession(clientId)) {
             var currentLang = cacheService.getCurrentLanguage(clientId);
             if (text.equals("/start")) {
@@ -112,21 +109,12 @@ public class CommandServiceImpl implements CommandService {
         return new SendMessage(chatId, "Unrecognized command");
     }
 
+    @Override
     public BotApiMethod<?> validateReplyMessage(Message message) {
-        if (message.getText().equalsIgnoreCase("да")
-                || message.getText().equalsIgnoreCase("yes")
-                || message.getText().equalsIgnoreCase("hə")) {
-
-            Long clientId = message.getFrom().getId();
-            String chatId = message.getChatId().toString();
-
-            //map selected messageid
-
-            return postQuestion(chatId, clientId, questionService.getQuestionByKey("phone"));
-        }
         return null;
     }
 
+    @Override
     public BotApiMethod<?> validateMessage(Message message) {
         Long clientId = message.getFrom().getId();
         String chatId = message.getChatId().toString();
@@ -134,15 +122,12 @@ public class CommandServiceImpl implements CommandService {
         String currentKey = cacheService.getCurrentStateQuestion(clientId);
         Question question = questionService.getQuestionByKey(currentKey);
 
-
         if (!validateQuestionAnswer(question, answer, clientId)) {
             handleIncorrectAnswer(chatId, message.getMessageId(), clientId);
             return postQuestion(chatId, clientId, questionService.getQuestionByKey(question.getKey()));
         }
         if (question == null || question.getKey().equals("complete")
                 || question.getKey().equals("waitForOffer") || question.getKey().equals("phone")) return null;
-
-
 
         return postQuestion(chatId, clientId, questionService.getNextQuestion(question, answer));
     }
@@ -183,7 +168,6 @@ public class CommandServiceImpl implements CommandService {
         }
     }
 
-
     private BotApiMethod<?> postQuestion(String chatId, Long clientId, Question question) {
         String code = cacheService.getCurrentLanguage(clientId);
         cacheService.setCurrentStateQuestion(clientId, question);
@@ -196,7 +180,13 @@ public class CommandServiceImpl implements CommandService {
             sendMessage.setReplyMarkup(generateKeyboard(date));
         }
         if (question.getKey().equals("complete")) {
-            // the end
+           cacheService.endCurrentSession(clientId);
+        }
+        if (question.getKey().equals("waitForOffer")) {
+        Map<String, String> buttons = new LinkedHashMap<>();
+        buttons.put("picture2", "picture1");
+        imageService.sendPhotoToChat(clientId, "ooo.png", "text", Button.maker(buttons));
+            return null;
         }
         if (question.getKey().equals("phone")) {
             sendRequestContactButton(chatId, clientId);
@@ -208,7 +198,8 @@ public class CommandServiceImpl implements CommandService {
 
     private void sendRequestContactButton(String chatId, Long clientId) {
         KeyboardButton button = new KeyboardButton();
-        button.setText("Request Contact");
+        String lang = cacheService.getCurrentLanguage(clientId);
+        button.setText(SampleAnswers.getMessage("askForNumber", lang));
         button.setRequestContact(true);
 
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
@@ -233,7 +224,6 @@ public class CommandServiceImpl implements CommandService {
             log.error(e.getMessage());
         }
     }
-
 
     private BotApiMethod<?> showQuestionKeyboard(Question question, String chatId, String text, String code) {
         Map<String, String> buttons = new LinkedHashMap<>();
@@ -325,22 +315,5 @@ public class CommandServiceImpl implements CommandService {
             return false;
         }
         return true;
-    }
-
-    public void sendPhoto(long chatId) {
-        try {
-            Resource resource = new ClassPathResource("tr.png");
-            File file = resource.getFile();
-
-            SendPhoto sendPhoto = new SendPhoto();
-            sendPhoto.setChatId(chatId);
-            sendPhoto.setCaption("imageCaption");
-            InputFile photo = new InputFile(file);
-            sendPhoto.setPhoto(photo);
-
-            bot.execute(sendPhoto);
-        } catch (IOException | TelegramApiException e) {
-            throw new RuntimeException("Failed to send photo", e);
-        }
     }
 }
