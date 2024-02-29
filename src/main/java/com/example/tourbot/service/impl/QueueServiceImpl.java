@@ -1,6 +1,6 @@
 package com.example.tourbot.service.impl;
 
-import com.example.tourbot.dto.OfferDto;
+import com.example.tourbot.dto.SelectedOfferDto;
 import com.example.tourbot.dto.SessionDto;
 import com.example.tourbot.service.QueueService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -18,7 +18,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void sendSelectedToQueue(OfferDto offer) {
+    public void sendSelectedToQueue(SelectedOfferDto offer) {
 
     }
 }
