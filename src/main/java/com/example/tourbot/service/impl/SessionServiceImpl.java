@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,16 +22,21 @@ public class SessionServiceImpl implements SessionService {
                 .chatId(currentSession.getChatId())
                 .expireDate(LocalDateTime.now().plusHours(1))
                 .build();
-         save(session);
+        repository.save(session);
     }
 
     @Override
-    public Session save(Session request) {
-        return repository.save(request);
+    public Session save(Session session) {
+        return repository.save(session);
     }
     @Override
     public List<Session> findByClientId(Long clientId) {
         return repository.findByClientId(clientId);
+    }
+
+    @Override
+    public Session findByUUId(UUID uuid) {
+      return repository.findByuuid(uuid);
     }
 
 }

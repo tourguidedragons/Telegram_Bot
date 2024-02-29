@@ -13,39 +13,40 @@ public class SampleAnswers {
         defaultMessages.put("stop", "Current session is closed. Restart session by typing /start");
         defaultMessages.put("activeSession", "You have active session, please first type /stop to restart");
         defaultMessages.put("stopActiveSession", "You don't have active session, please type /start to start");
-        defaultMessages.put("languageSetup", "Select bot language");
-        defaultMessages.put("incorrectAnswer", "Incorrect answer!");
-        defaultMessages.put("unrecognizedCommand", "Unrecognized command! Enter again");
+        defaultMessages.put("languageSetup", "Select bot language \uD83C\uDF0E");
+        defaultMessages.put("incorrectAnswer", "❌ Incorrect answer!");
+        defaultMessages.put("unrecognizedCommand", "Unrecognized command \uD83E\uDD14! Enter again");
         defaultMessages.put("selectedLanguage", "Selected language:");
-        defaultMessages.put("waitForOffers", "We are preparing offers for you, please wait");
-        defaultMessages.put("loadOfferQuestion", "Do you want to load new offers?");
-        defaultMessages.put("selectOffer", "To select an offer, reply to the image and enter 'yes'");
+        defaultMessages.put("waitForOffers", "\uD83D\uDCAD We are preparing offers for you, please wait");
+        defaultMessages.put("loadOffer", "Do you want to load new offers?");
+        defaultMessages.put("askForNumber", "\uD83D\uDCF1 Share contact number");
 
         Map<String, String> ruMessages = new HashMap<>();
         ruMessages.put("start", "Введите /start, чтобы начать");
         ruMessages.put("stop", "Сессия закрыта, введите /start чтобы перезапустить сессию");
         ruMessages.put("activeSession", "У вас уже есть активная сессия. Чтобы перезапустить введите /stop");
         ruMessages.put("stopActiveSession", "У вас нет активного сеанса, введите /start, чтобы начать");
-        ruMessages.put("languageSetup", "Выберите язык бота");
-        ruMessages.put("incorrectAnswer", "Неправильный ответ!");
-        ruMessages.put("unrecognizedCommand", "Неверная команда! Введите запрос заново");
+        ruMessages.put("languageSetup", "Выберите язык бота \uD83C\uDF0E");
+        ruMessages.put("incorrectAnswer", "❌ Неправильный ответ!");
+        ruMessages.put("unrecognizedCommand", "Неверная команда \uD83E\uDD14! Введите запрос заново");
         ruMessages.put("selectedLanguage", "Выбранный язык:");
-        ruMessages.put("waitForOffers", "Мы готовим предложения для вас, пожалуйста, подождите");
-        ruMessages.put("loadOfferQuestion", "Хотите загрузить новые предложения?");
-        ruMessages.put("selectOffer", "Чтобы выбрать предложение, ответьте на изображение и введите 'да'");
+        ruMessages.put("waitForOffers", "\uD83D\uDCAD Мы готовим предложения для вас, пожалуйста, подождите");
+        ruMessages.put("loadOffer", "Хотите загрузить новые предложения?");
+        ruMessages.put("askForNumber", "\uD83D\uDCF1 Поделиться номером");
 
         Map<String, String> azMessages = new HashMap<>();
         azMessages.put("start", "Başlamaq üçün / start yazın");
         azMessages.put("stop", "Sessiyanız bağlandı. Başlamaq üçün /start yazın");
         azMessages.put("activeSession", "Sizin aktiv sessiyanız var, yenidən başlamaq üçün /stop komandasını daxil edin");
         azMessages.put("stopActiveSession", "Sizin aktiv sessiyanız yoxdur, yeni sessiya yaratmaq üçün /start komandasını daxil edin");
-        azMessages.put("languageSetup", "Bot dilini seçin");
-        azMessages.put("incorrectAnswer", "Yanlış cavab!");
-        azMessages.put("unrecognizedCommand", "Yanlış komanda! Yenidən daxil edin");
+        azMessages.put("languageSetup", "Bot dilini seçin \uD83C\uDF0E");
+        azMessages.put("incorrectAnswer", "❌ Yanlış cavab!");
+        azMessages.put("unrecognizedCommand", "Yanlış komanda \uD83E\uDD14! Yenidən daxil edin");
         azMessages.put("selectedLanguage", "Seçilmiş dil:");
-        azMessages.put("waitForOffers", "Sizin üçün təkliflər hazırlıyırıq.Zəhmət olmasa gözləyin");
-        azMessages.put("loadOfferQuestion", " Yeni təkliflər görmək istəyirsinizmi");
-        azMessages.put("selectOffer", " Təklifi seçmək üçün şəkilə reply edib, 'yes' yazib gonderin");
+        azMessages.put("waitForOffers", "\uD83D\uDCAD Sizin üçün təkliflər hazırlıyırıq.Zəhmət olmasa gözləyin");
+        azMessages.put("loadOffer", " Yeni təkliflər görmək istəyirsinizmi?️");
+        azMessages.put("askForNumber", "\uD83D\uDCF1 Əlaqə nömrəsini paylaşın");
+
 
         messages.put("default", defaultMessages);
         messages.put("RU", ruMessages);
