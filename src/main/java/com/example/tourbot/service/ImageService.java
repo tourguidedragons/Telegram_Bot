@@ -28,6 +28,7 @@ public class ImageService extends DefaultAbsSender {
             sendPhoto.setChatId(chatId);
             sendPhoto.setPhoto(inputFile);
             sendPhoto.setCaption(caption);
+
             sendPhoto.setReplyMarkup(keyboard);
             this.execute(sendPhoto);
         } catch (TelegramApiException e) {
