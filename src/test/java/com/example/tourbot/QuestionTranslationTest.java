@@ -28,16 +28,14 @@ public class QuestionTranslationTest {
      void executeBefore() {
         MockitoAnnotations.openMocks(QuestionRepository.class);
         service = new QuestionServiceImpl(repository);
-        List<Option> options = List.of(Option.builder().optionType(OptionType.TEXT).answer("text").build());
-
         question = Question.builder()
                 .key("test")
                 .content("Unit test")
                 .pattern("")
                 .translations(List.of(
                         Translation.builder().translatedText("Hello, this is simple test").language(Language.builder().code("EN").build()).build(),
-                        Translation.builder().translatedText("Bu bir testdir").language(Language.builder().code("AZ").build()).build()
-//                        Translation.builder().translatedText("Тестирование").language(Language.builder().code("RU").build()).build()
+                        Translation.builder().translatedText("Bu bir testdir").language(Language.builder().code("AZ").build()).build(),
+                       Translation.builder().translatedText("Тестирование").language(Language.builder().code("RU").build()).build()
                 ))
                 .build();
     }
@@ -46,15 +44,15 @@ public class QuestionTranslationTest {
     @DisplayName("Test English translation")
     void testGetQuestionTranslationInEnglish() {
         String translation = service.getQuestionTranslation(question, "EN");
-        Assertions.assertTrue(translation.equals("Hello, this is simple test") || translation.equals("Unit test"));
-    }
-    @Test
-    @DisplayName("Test spanish translation")
-    void testGetQuestionTranslationI() {
-        String translation = service.getQuestionTranslation(question, "ES");
-        Assertions.assertTrue(translation.equals("Hola, esta es una prueba sencilla") || translation.equals("Unit test"));
+        Assertions.assertEquals("Hello, this is simple test",  translation);
     }
 
+    @Test
+    @DisplayName("Test Spanish translation")
+    void testGetQuestionTranslationInSpanish() {
+        String translation = service.getQuestionTranslation(question, "ES");
+        Assertions.assertEquals("Unit test", translation);
+    }
 
     @Test
     @DisplayName("Test Russian translation")
