@@ -24,8 +24,8 @@ public class ImageService extends DefaultAbsSender {
 
     public int sendPhotoToChat(Long chatId, byte[] image, String caption, ReplyKeyboard keyboard) {
         try {
-            InputFile inputFile = new InputFile();
-            inputFile.setMedia(new File(photoFilePath));
+//            InputFile inputFile = new InputFile();
+//            inputFile.setMedia(new File(photoFilePath));
 
             File imageConverted = imageFromBytes(image);
             SendPhoto sendPhoto = new SendPhoto();
